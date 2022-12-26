@@ -1,20 +1,51 @@
-from fastapi import FastAPI, Query
+import uvicorn, io
+from fastapi import FastAPI, Query, UploadFile, File
 from typing import List, Optional
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 from model.db_handler import match_exact, match_like
-import uvicorn
+from bin.filters import apply_filter
 
 
 app = FastAPI()
 
 
-@app.get('/')
+filters_availbale = [
+    'blur',
+    'contour',
+    'detail',
+    'edge_enhance',
+    'edge_enhance_more',
+    'emboss',
+    'find_edges',
+    'sharpen',
+    'smooth',
+    'smooth_more',
+]
+
+
+@app.api_route('/', methods=['GET', 'POST'])
 def index():
     '''
     Index provides usage instractions in JSON format
     '''
-    response = {'usage': '/dict?=<word>'}
-    return response
+    response = {
+        'filters_available': filters_availbale,
+        'usage': {'http_method': 'POST', 'URL': '/<filter_available>'}
+        }
+    return jsonable_encoder(response)
+
+
+@app.post('/{filter}')
+def image_filter(filter: str, img: UploadFile = File(...)):
+    
+    if filter not in filters_availbale:
+        response = {'error': 'incorrect filter'}
+        return jsonable_encoder(response)
+
+    filtered_image = apply_filter(img.file, filter)
+
+    return StreamingResponse(filtered_image, media_type='image/jpeg')
 
 
 @app.get('/dict')
