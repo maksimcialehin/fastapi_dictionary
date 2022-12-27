@@ -25,7 +25,7 @@ filters_availbale = [
 
 
 @app.api_route('/', methods=['GET', 'POST'])
-def index():
+async def index():
     '''
     Index provides usage instractions in JSON format
     '''
